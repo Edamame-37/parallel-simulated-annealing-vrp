@@ -53,7 +53,7 @@ Program berjalan dalam 4 fase utama:
 
 ---
 
-## 📊 Input dan Output
+## Input dan Output
 
 * **Input:**
 * File dataset berisi informasi node (Depot dan Pelanggan), mencakup: ID, Koordinat X, Koordinat Y, dan *Demand* (permintaan).
@@ -69,7 +69,7 @@ Program berjalan dalam 4 fase utama:
 
 ---
 
-## 🚀 Perencanaan Pengembangan (Roadmap)
+## Perencanaan Pengembangan (Roadmap)
 
 * [ ] **Tahap 1: Persiapan Serial (Tanpa MPI)**
 * Membuat *struct* data untuk merepresentasikan Kota dan Kendaraan.
@@ -100,7 +100,7 @@ Program berjalan dalam 4 fase utama:
 
 ---
 
-## 💻 Panduan Kompilasi dan Eksekusi
+## Panduan Kompilasi dan Eksekusi
 
 Pastikan Anda memiliki *compiler* C/C++ dan pustaka MPI (seperti OpenMPI atau MPICH) terinstal di sistem Anda (misal: WSL/Linux).
 
