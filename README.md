@@ -127,6 +127,160 @@ make run-medium
 
 ```
 
+## Penampilan Output
+```text
+==================================================================
+   PARALLEL SIMULATED ANNEALING UNTUK OPTIMASI CVRP DENGAN MPI
+==================================================================
+Jumlah Prosesor (Rank) : 1
+Dataset                : data/dataset_small.txt
+Parameter SA           : T0=1000.00, Alpha=0.9950, Tmin=0.0010, Iters/Temp=150
+Dataset Berhasil Dimuat: 16 Node (1 Depot, 15 Pelanggan), Kapasitas=35
+------------------------------------------------------------------
+
+==================================================================
+                     HASIL OPTIMASI GLOBAL
+==================================================================
+Rank Pemenang (Best Solution) : Rank 0
+Total Jarak Tempuh Minimum    : 371.7148 unit
+Total Kendaraan yang Digunakan: 4 armada
+Waktu Komputasi Paralel       : 0.0610 detik
+
+==================================================================
+                  RINCIAN RUTE KENDARAAN (CVRP)
+==================================================================
+[Kendaraan #1]
+  Rute: Depot (ID: 0) -> P4(D:6) -> P9(D:5) -> P10(D:7) -> P11(D:6) -> P3(D:8) -> Depot (ID: 0)
+  Muatan: 32 / 35 | Sub-Jarak: 113.03
+
+[Kendaraan #2]
+  Rute: Depot (ID: 0) -> P6(D:10) -> P15(D:6) -> P14(D:7) -> P7(D:4) -> P8(D:8) -> Depot (ID: 0)
+  Muatan: 35 / 35 | Sub-Jarak: 133.34
+
+[Kendaraan #3]
+  Rute: Depot (ID: 0) -> P1(D:7) -> P12(D:9) -> P13(D:8) -> P5(D:9) -> Depot (ID: 0)
+  Muatan: 33 / 35 | Sub-Jarak: 102.98
+
+[Kendaraan #4]
+  Rute: Depot (ID: 0) -> P2(D:5) -> Depot (ID: 0)
+  Muatan: 5 / 35 | Sub-Jarak: 22.36
+==================================================================
+
+
+==================================================================
+   PARALLEL SIMULATED ANNEALING UNTUK OPTIMASI CVRP DENGAN MPI
+==================================================================
+Jumlah Prosesor (Rank) : 1
+Dataset                : data/dataset_small.txt
+Parameter SA           : T0=1000.00, Alpha=0.9950, Tmin=0.0010, Iters/Temp=150
+Dataset Berhasil Dimuat: 16 Node (1 Depot, 15 Pelanggan), Kapasitas=35
+------------------------------------------------------------------
+
+==================================================================
+                     HASIL OPTIMASI GLOBAL
+==================================================================
+Rank Pemenang (Best Solution) : Rank 0
+Total Jarak Tempuh Minimum    : 371.7148 unit
+Total Kendaraan yang Digunakan: 4 armada
+Waktu Komputasi Paralel       : 0.0716 detik
+
+==================================================================
+                  RINCIAN RUTE KENDARAAN (CVRP)
+==================================================================
+[Kendaraan #1]
+  Rute: Depot (ID: 0) -> P4(D:6) -> P9(D:5) -> P10(D:7) -> P11(D:6) -> P3(D:8) -> Depot (ID: 0)
+  Muatan: 32 / 35 | Sub-Jarak: 113.03
+
+[Kendaraan #2]
+  Rute: Depot (ID: 0) -> P6(D:10) -> P15(D:6) -> P14(D:7) -> P7(D:4) -> P8(D:8) -> Depot (ID: 0)
+  Muatan: 35 / 35 | Sub-Jarak: 133.34
+
+[Kendaraan #3]
+  Rute: Depot (ID: 0) -> P1(D:7) -> P12(D:9) -> P13(D:8) -> P5(D:9) -> Depot (ID: 0)
+  Muatan: 33 / 35 | Sub-Jarak: 102.98
+
+[Kendaraan #4]
+  Rute: Depot (ID: 0) -> P2(D:5) -> Depot (ID: 0)
+  Muatan: 5 / 35 | Sub-Jarak: 22.36
+==================================================================
+
+
+==================================================================
+   PARALLEL SIMULATED ANNEALING UNTUK OPTIMASI CVRP DENGAN MPI
+==================================================================
+Jumlah Prosesor (Rank) : 1
+Dataset                : data/dataset_small.txt
+Parameter SA           : T0=1000.00, Alpha=0.9950, Tmin=0.0010, Iters/Temp=150
+Dataset Berhasil Dimuat: 16 Node (1 Depot, 15 Pelanggan), Kapasitas=35
+------------------------------------------------------------------
+
+==================================================================
+                     HASIL OPTIMASI GLOBAL
+==================================================================
+Rank Pemenang (Best Solution) : Rank 0
+Total Jarak Tempuh Minimum    : 371.7148 unit
+Total Kendaraan yang Digunakan: 4 armada
+Waktu Komputasi Paralel       : 0.0717 detik
+
+==================================================================
+                  RINCIAN RUTE KENDARAAN (CVRP)
+==================================================================
+[Kendaraan #1]
+  Rute: Depot (ID: 0) -> P4(D:6) -> P9(D:5) -> P10(D:7) -> P11(D:6) -> P3(D:8) -> Depot (ID: 0)
+  Muatan: 32 / 35 | Sub-Jarak: 113.03
+
+[Kendaraan #2]
+  Rute: Depot (ID: 0) -> P6(D:10) -> P15(D:6) -> P14(D:7) -> P7(D:4) -> P8(D:8) -> Depot (ID: 0)
+  Muatan: 35 / 35 | Sub-Jarak: 133.34
+
+[Kendaraan #3]
+  Rute: Depot (ID: 0) -> P1(D:7) -> P12(D:9) -> P13(D:8) -> P5(D:9) -> Depot (ID: 0)
+  Muatan: 33 / 35 | Sub-Jarak: 102.98
+
+[Kendaraan #4]
+  Rute: Depot (ID: 0) -> P2(D:5) -> Depot (ID: 0)
+  Muatan: 5 / 35 | Sub-Jarak: 22.36
+==================================================================
+
+
+==================================================================
+   PARALLEL SIMULATED ANNEALING UNTUK OPTIMASI CVRP DENGAN MPI
+==================================================================
+Jumlah Prosesor (Rank) : 1
+Dataset                : data/dataset_small.txt
+Parameter SA           : T0=1000.00, Alpha=0.9950, Tmin=0.0010, Iters/Temp=150
+Dataset Berhasil Dimuat: 16 Node (1 Depot, 15 Pelanggan), Kapasitas=35
+------------------------------------------------------------------
+
+==================================================================
+                     HASIL OPTIMASI GLOBAL
+==================================================================
+Rank Pemenang (Best Solution) : Rank 0
+Total Jarak Tempuh Minimum    : 371.7148 unit
+Total Kendaraan yang Digunakan: 4 armada
+Waktu Komputasi Paralel       : 0.0743 detik
+
+==================================================================
+                  RINCIAN RUTE KENDARAAN (CVRP)
+==================================================================
+[Kendaraan #1]
+  Rute: Depot (ID: 0) -> P4(D:6) -> P9(D:5) -> P10(D:7) -> P11(D:6) -> P3(D:8) -> Depot (ID: 0)
+  Muatan: 32 / 35 | Sub-Jarak: 113.03
+
+[Kendaraan #2]
+  Rute: Depot (ID: 0) -> P6(D:10) -> P15(D:6) -> P14(D:7) -> P7(D:4) -> P8(D:8) -> Depot (ID: 0)
+  Muatan: 35 / 35 | Sub-Jarak: 133.34
+
+[Kendaraan #3]
+  Rute: Depot (ID: 0) -> P1(D:7) -> P12(D:9) -> P13(D:8) -> P5(D:9) -> Depot (ID: 0)
+  Muatan: 33 / 35 | Sub-Jarak: 102.98
+
+[Kendaraan #4]
+  Rute: Depot (ID: 0) -> P2(D:5) -> Depot (ID: 0)
+  Muatan: 5 / 35 | Sub-Jarak: 22.36
+=========================================================
+```
+
 
 ## 📌 Gambaran Umum & Konsep
 
