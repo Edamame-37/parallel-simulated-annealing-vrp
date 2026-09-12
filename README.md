@@ -134,50 +134,59 @@ make run-medium
 
 Pendekatan paralel yang digunakan adalah **Island Model / Independent Search**, di mana setiap prosesor (MPI Rank) menjalankan simulasi pencarian rute secara mandiri dengan *random seed* dan skema pendinginan yang bervariasi. Pendekatan ini secara drastis mengurangi risiko terjebak dalam solusi *local optima*.
 
+```text=
+SEBELUM OPTIMASI (Acak):
+    (C3)      (C4)
+      \       /
+  (C2)--[DEPOT]--(C5)   -> Jarak: 245 km (Tumpang Tindih)
+      /       \
+    (C1)      (C6)
 
-   (C3)       (C4)                              (C3)------(C4)
-    /          \                                 /          \
-(C2)   [DEPOT]  (C5)                         (C2)   [DEPOT]  (C5)
-   \    /   \    /                              \    /   \    /
-   (C1)       (C6)                              (C1)       (C6)
+SESUDAH OPTIMASI (Efisien):
+    (C3)------(C4)
+     /          \
+  (C2)  [DEPOT]  (C5)   -> Jarak: 112 km (Rute Optimal)
+     \    /   \    /
+     (C1)       (C6)
 
-
+```
 ## 🎨 Diagram Visualisasi Cara Kerja MPI
 
 ### 1. Alur Arsitektur Paralel Master-Worker
 
-+-------------------------------------------------------------------------------+
-|                               MASTER (Rank 0)                                 |
-|  1. Membaca dataset lokasi pelanggan, matriks jarak, dan kapasitas armada.    |
-|  2. Mendistribusikan data problema ke seluruh Worker via MPI_Bcast().         |
-+-------------------------------------------------------------------------------+
-|
-+----------------------+----------------------+
-| (MPI_Bcast)          |                      |
-v                      v                      v
-+------------------------+ +------------------------+ +------------------------+
-|    WORKER 1 (Rank 1)   | |    WORKER 2 (Rank 2)   | |    WORKER N (Rank N)   |
-| ---------------------- | | ---------------------- | | ---------------------- |
-| - Seed: 101            | | - Seed: 202            | | - Seed: N0N            |
-| - T_initial: 1000°C    | | - T_initial: 1200°C    | | - T_initial: 900°C     |
-| - Alpha: 0.995         | | - Alpha: 0.990         | | - Alpha: 0.998         |
-|                        | |                        | |                        |
-|  Proses Pencarian:     | |  Proses Pencarian:     | |  Proses Pencarian:     |
-|  [Simulated Annealing] | |  [Simulated Annealing] | |  [Simulated Annealing] |
-|           |            | |           |            | |           |            |
-|           v            | |           v            | |           v            |
-|  Hasil Lokal Best 1    | |  Hasil Lokal Best 2    | |  Hasil Lokal Best N    |
-+------------------------+ +------------------------+ +------------------------+
-|                      |                      |
-+----------------------+----------------------+
-|
-v (MPI_Reduce dengan MPI_MINLOC)
-+-------------------------------------------------------------------------------+
-|                               MASTER (Rank 0)                                 |
-|  3. Mengumpulkan dan membandingkan semua solusi terbaik lokal.                |
-|  4. Mengambil solusi dengan Global Minimum Distance (Total Jarak Termurah).   |
-|  5. Mencetak rute kendaraan final dan statistik performa eksekusi.            |
-+-------------------------------------------------------------------------------+
++-------------------------------------------------------+
+|                    MASTER (Rank 0)                    |
+| 1. Membaca dataset lokasi & kapasitas armada.         |
+| 2. Distribusi data ke seluruh Worker via MPI_Bcast(). |
++-------------------------------------------------------+
+                           |
+                           v (MPI_Bcast)
+     +---------------------+---------------------+
+     |                     |                     |
+     v                     v                     v
++------------+        +------------+        +------------+
+|  WORKER 1  |        |  WORKER 2  |        |  WORKER N  |
+|  (Rank 1)  |        |  (Rank 2)  |        |  (Rank N)  |
++------------+        +------------+        +------------+
+| Seed: 101  |        | Seed: 202  |        | Seed: N0N  |
+| T: 1000°C  |        | T: 1200°C  |        | T: 900°C   |
+| Alpha: 0.95|        | Alpha: 0.90|        | Alpha: 0.98|
++------------+        +------------+        +------------+
+     |                     |                     |
+     v                     v                     v
+[  SA Loop  ]         [  SA Loop  ]         [  SA Loop  ]
+     |                     |                     |
+     v                     v                     v
+(Best Sol 1)          (Best Sol 2)          (Best Sol N)
+     |                     |                     |
+     +---------------------+---------------------+
+                           |
+                           v (MPI_Reduce: MPI_MINLOC)
++-------------------------------------------------------+
+|                    MASTER (Rank 0)                    |
+| 3. Ambil solusi terbaik (Global Minimum Distance).    |
+| 4. Cetak Rute Optimal & Statistik Performa.           |
++-------------------------------------------------------+
 
 
 ### 2. Alur Pencarian Solusi di Setiap Node (Simulated Annealing Loop)
