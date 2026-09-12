@@ -154,6 +154,7 @@ SESUDAH OPTIMASI (Efisien):
 
 ### 1. Alur Arsitektur Paralel Master-Worker
 
+```text
 +-------------------------------------------------------+
 |                    MASTER (Rank 0)                    |
 | 1. Membaca dataset lokasi & kapasitas armada.         |
@@ -187,6 +188,7 @@ SESUDAH OPTIMASI (Efisien):
 | 3. Ambil solusi terbaik (Global Minimum Distance).    |
 | 4. Cetak Rute Optimal & Statistik Performa.           |
 +-------------------------------------------------------+
+```
 
 
 ### 2. Alur Pencarian Solusi di Setiap Node (Simulated Annealing Loop)
