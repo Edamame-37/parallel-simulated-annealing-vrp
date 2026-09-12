@@ -6,7 +6,7 @@ Pendekatan paralel yang digunakan adalah **Multiple Independent Markov Chains**,
 
 ---
 
-## 🧠 Konsep Algoritma
+## Konsep Algoritma
 
 ### 1. Vehicle Routing Problem (VRP)
 
@@ -24,7 +24,7 @@ SA adalah algoritma heuristik yang terinspirasi dari proses pendinginan logam. A
 
 ---
 
-## ⚙️ Cara Kerja Program (Pipeline MPI)
+## Cara Kerja Program (Pipeline MPI)
 
 Program berjalan dalam 4 fase utama:
 
@@ -71,30 +71,30 @@ Program berjalan dalam 4 fase utama:
 
 ## 🚀 Perencanaan Pengembangan (Roadmap)
 
-* [x] **Tahap 1: Persiapan Serial (Tanpa MPI)**
-  * Membuat *struct* data untuk merepresentasikan Kota dan Kendaraan (`Node`, `Solution`).
-  * Membuat fungsi penghitung jarak Euclidean antar dua titik (`calculate_distance`).
-  * Menulis fungsi evaluasi rute (termasuk pengecekan kapasitas kendaraan `evaluate_solution`).
-  * Implementasi *loop* algoritma *Simulated Annealing* dasar.
+* [ ] **Tahap 1: Persiapan Serial (Tanpa MPI)**
+* Membuat *struct* data untuk merepresentasikan Kota dan Kendaraan.
+* Membuat fungsi penghitung jarak Euclidean antar dua titik.
+* Menulis fungsi evaluasi rute (termasuk pengecekan kapasitas kendaraan).
+* Implementasi *loop* algoritma *Simulated Annealing* dasar.
 
 
-* [x] **Tahap 2: Integrasi MPI (Distribusi Data)**
-  * Inisialisasi `MPI_Init`.
-  * Master membaca file dataset dan mem-parsing datanya ke dalam array (`read_dataset`).
-  * Implementasi `MPI_Bcast` untuk menyalin array dataset dari Master ke semua memori *Worker*.
+* [ ] **Tahap 2: Integrasi MPI (Distribusi Data)**
+* Inisialisasi `MPI_Init`.
+* Master membaca file dataset dan mem-parsing datanya ke dalam array.
+* Implementasi `MPI_Bcast` untuk menyalin array dataset dari Master ke semua memori *Worker*.
 
 
-* [x] **Tahap 3: Paralelisasi SA & Reduksi**
-  * Pemisahan *Random Seed* berdasarkan ID Rank (`rank_seed`).
-  * Eksekusi SA pada masing-masing Rank.
-  * Pengumpulan nilai jarak terpendek menggunakan `MPI_Reduce` (`MPI_MINLOC`).
-  * Transfer array rute dari pemenang ke Master menggunakan `MPI_Send` / `MPI_Recv`.
+* [ ] **Tahap 3: Paralelisasi SA & Reduksi**
+* Pemisahan *Random Seed* berdasarkan ID Rank.
+* Eksekusi SA pada masing-masing Rank.
+* Pengumpulan nilai jarak terpendek menggunakan `MPI_Reduce` (`MPI_MINLOC`).
+* Transfer array rute dari pemenang ke Master menggunakan `MPI_Send` / `MPI_Recv`.
 
 
 * [ ] **Tahap 4: Pengujian & Pembuatan Laporan**
-  * Uji coba program dengan dataset kecil (10-20 kota) dan dataset besar (>100 kota).
-  * Mengukur waktu eksekusi menggunakan `MPI_Wtime()`.
-  * Membandingkan metrik waktu dan hasil optimasi antara 1 Core, 2 Core, dan 4 Core (Menghitung *Speedup*).
+* Uji coba program dengan dataset kecil (10-20 kota) dan dataset besar (>100 kota).
+* Mengukur waktu eksekusi menggunakan `MPI_Wtime()`.
+* Membandingkan metrik waktu dan hasil optimasi antara 1 Core, 2 Core, dan 4 Core (Menghitung *Speedup*).
 
 
 
