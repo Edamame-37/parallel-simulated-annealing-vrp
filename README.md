@@ -110,9 +110,6 @@ Pastikan Anda memiliki *compiler* C/C++ dan pustaka MPI (seperti OpenMPI atau MP
 make
 
 ```
-
-*(Catatan: flag `-lm` digunakan jika Anda menggunakan library `<math.h>` untuk perhitungan eksponensial Boltzmann dan jarak Euclidean).*
-
 **2. Menjalankan Program**
 
 ```bash
