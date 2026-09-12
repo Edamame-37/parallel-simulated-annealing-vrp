@@ -107,7 +107,7 @@ Pastikan Anda memiliki *compiler* C/C++ dan pustaka MPI (seperti OpenMPI atau MP
 **1. Kompilasi Program**
 
 ```bash
-mpicc -o vrp_sa vrp_sa_mpi.c -lm
+make
 
 ```
 
@@ -116,7 +116,144 @@ mpicc -o vrp_sa vrp_sa_mpi.c -lm
 **2. Menjalankan Program**
 
 ```bash
-# Menjalankan dengan 4 prosesor
-mpirun -np 4 ./vrp_sa dataset_kota.txt
+# Menjalankan dengan 4 prosesor (dataset kecil)
+make run-small
 
 ```
+
+```bash
+# Menjalankan dengan 4 prosesor (dataset besar)
+make run-medium
+
+```
+
+
+## 📌 Gambaran Umum & Konsep
+
+**Vehicle Routing Problem (VRP)** bertujuan untuk menemukan rute paling optimal bagi sejumlah armada kendaraan berkapasitas terbatas dalam melayani sekumpulan pelanggan dari satu titik pusat (depot). 
+
+Pendekatan paralel yang digunakan adalah **Island Model / Independent Search**, di mana setiap prosesor (MPI Rank) menjalankan simulasi pencarian rute secara mandiri dengan *random seed* dan skema pendinginan yang bervariasi. Pendekatan ini secara drastis mengurangi risiko terjebak dalam solusi *local optima*.
+
+
+   (C3)       (C4)                              (C3)------(C4)
+    /          \                                 /          \
+(C2)   [DEPOT]  (C5)                         (C2)   [DEPOT]  (C5)
+   \    /   \    /                              \    /   \    /
+   (C1)       (C6)                              (C1)       (C6)
+
+
+## 🎨 Diagram Visualisasi Cara Kerja MPI
+
+### 1. Alur Arsitektur Paralel Master-Worker
+
++-------------------------------------------------------------------------------+
+|                               MASTER (Rank 0)                                 |
+|  1. Membaca dataset lokasi pelanggan, matriks jarak, dan kapasitas armada.    |
+|  2. Mendistribusikan data problema ke seluruh Worker via MPI_Bcast().         |
++-------------------------------------------------------------------------------+
+|
++----------------------+----------------------+
+| (MPI_Bcast)          |                      |
+v                      v                      v
++------------------------+ +------------------------+ +------------------------+
+|    WORKER 1 (Rank 1)   | |    WORKER 2 (Rank 2)   | |    WORKER N (Rank N)   |
+| ---------------------- | | ---------------------- | | ---------------------- |
+| - Seed: 101            | | - Seed: 202            | | - Seed: N0N            |
+| - T_initial: 1000°C    | | - T_initial: 1200°C    | | - T_initial: 900°C     |
+| - Alpha: 0.995         | | - Alpha: 0.990         | | - Alpha: 0.998         |
+|                        | |                        | |                        |
+|  Proses Pencarian:     | |  Proses Pencarian:     | |  Proses Pencarian:     |
+|  [Simulated Annealing] | |  [Simulated Annealing] | |  [Simulated Annealing] |
+|           |            | |           |            | |           |            |
+|           v            | |           v            | |           v            |
+|  Hasil Lokal Best 1    | |  Hasil Lokal Best 2    | |  Hasil Lokal Best N    |
++------------------------+ +------------------------+ +------------------------+
+|                      |                      |
++----------------------+----------------------+
+|
+v (MPI_Reduce dengan MPI_MINLOC)
++-------------------------------------------------------------------------------+
+|                               MASTER (Rank 0)                                 |
+|  3. Mengumpulkan dan membandingkan semua solusi terbaik lokal.                |
+|  4. Mengambil solusi dengan Global Minimum Distance (Total Jarak Termurah).   |
+|  5. Mencetak rute kendaraan final dan statistik performa eksekusi.            |
++-------------------------------------------------------------------------------+
+
+
+### 2. Alur Pencarian Solusi di Setiap Node (Simulated Annealing Loop)
+
+Setiap Worker menjalankan iterasi berikut tanpa saling mengganggu (*zero communication overhead* selama fase komputasi):
+
+                   +------------------------+
+                   | Formulasi Solusi Awal  |
+                   |  (Generasi Rute Acak)  |
+                   +------------------------+
+                               |
+                               v
+         +--------------------------------------------+
+         | Mutasi Rute (Swap / 2-Opt / Reinsert Node) | <---------+
+         +--------------------------------------------+           |
+                               |                                  |
+                               v                                  |
+                  +--------------------------+                    |
+                  |   Hitung ΔCost (Jarak)   |                    |
+                  +--------------------------+                    |
+                               |                                  |
+               +---------------+---------------+                  |
+               |                               |                  |
+       [ΔCost < 0]                     [ΔCost >= 0]               |
+      (Lebih Bagus)                  (Lebih Buruk)                |
+               |                               |                  |
+               v                               v                  |
+       +---------------+               +---------------+          |
+       | Terima Solusi |               |  Hitung P =   |          |
+       +---------------+               | exp(-ΔCost/T) |          |
+               |                       +---------------+          |
+               |                               |                  |
+               |                     +---------+---------+        |
+               |                     |                   |        |
+               |              [random() < P]    [random() >= P]   |
+               |               (Terima Acak)       (Tolak)        |
+               |                     |                   |        |
+               |                     v                   v        |
+               +---------------------+-------------------+        |
+                                     |                            |
+                                     v                            |
+                         +-----------------------+                |
+                         | Diturunkan Suhu (T)   |                |
+                         |  T = T * Alpha        |                |
+                         +-----------------------+                |
+                                     |                            |
+                             [Belum Selesai]                      |
+                                     |                            |
+                                     +----------------------------+
+                                     |
+                                [Suhu T Min]
+                                     |
+                                     v
+                         +-----------------------+
+                         | Kirim Solusi Terbaik  |
+                         |   Lokal ke Master     |
+                         +-----------------------+
+
+## 🛠️ Prasyarat System
+
+* **Compiler C/C++:** `gcc` / `g++` (versi 9.0 atau yang lebih baru)
+* **MPI Library:** `OpenMPI` (v4.0+) atau `MPICH`
+* **Build System:** `Make`
+
+---
+
+## 📁 Struktur Direktori
+
+```text
+.
+├── data/
+│   └── dataset_medium.txt       # Dataset koordinat pelanggan & kapasitas
+|   └── dataset_small.txt       # Dataset koordinat pelanggan & kapasitas
+├── src/
+│   ├── main.c                 # Logika utama MPI & Komunikasi Node
+│   ├── vrp_sa.c               # Algoritma Simulated Annealing & Mutasi Rute
+│   └── vrp_utils.c               # Definisi Struktur Data & Header Function
+├── Makefile                   # Skrip otomatisasi kompilasi
+└── README.md                  # Dokumentasi proyek
