@@ -16,12 +16,14 @@ Program ini awalnya menggunakan MPI dan sekarang dimigrasi menjadi CUDA.
 
 ## Kompilasi
 
-Gunakan `make` untuk melakukan kompilasi proyek:
+Kompilasi secara manual menggunakan `nvcc` (jika menggunakan Windows PowerShell):
+```powershell
+nvcc -O3 -Xcompiler -Wall -I./include src/main.cu src/vrp_sa.cu src/vrp_utils.cu -o vrp_sa_cuda.exe
+```
+Atau gunakan `make` jika berada di lingkungan Linux/WSL:
 ```bash
 make
 ```
-
-Ini akan menghasilkan executable bernama `vrp_sa_cuda`.
 
 ## Cara Menjalankan Eksekusi
 
@@ -30,7 +32,7 @@ Jalankan program dengan meneruskan argumen berikut:
 ./vrp_sa_cuda <dataset> <T0> <Alpha> <Tmin> <Iterations> <Num_Blocks> <Threads_Per_Block>
 ```
 
-Contoh eksekusi:
-```bash
-./vrp_sa_cuda data/dataset_medium.txt 1000.0 0.99 0.1 1000 64 256
+Contoh eksekusi (Windows):
+```powershell
+.\vrp_sa_cuda.exe data/dataset_medium.txt 1000.0 0.99 0.1 1000 64 256
 ```
