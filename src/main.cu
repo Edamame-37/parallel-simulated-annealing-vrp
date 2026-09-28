@@ -26,23 +26,39 @@ int main(int argc, char** argv) {
     
     Solution global_best;
     
+    /* ---------------------------------------------------------------------
+       [8. KONSEP CUDA: Event Synchronizing & Measuring Time]
+       Kita tidak bisa menggunakan fungsi ukur waktu CPU standar seperti `time()`
+       atau `clock()` karena perintah eksekusi kernel ke GPU dikirim asinkron (langsung lolos).
+       Oleh karena itu, CUDA menggunakan sistem "Event Marker".
+       --------------------------------------------------------------------- */
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     
+    // Menaruh tonggak (marker) 'start' di aliran perintah (stream) GPU
     cudaEventRecord(start);
     
+    // Menjalankan wrapper GPU SA.
+    // Jika wrapper tersebut tidak menggunakan cudaDeviceSynchronize() di dalamnya, 
+    // baris kode CPU kita akan langsung tembus mengeksekusi kode di bawah ini 
+    // walau GPU baru mulai pemanasan.
     run_cuda_parallel_sa(h_nodes, num_nodes, capacity, params, &global_best);
     
+    // Menaruh tonggak 'stop' di aliran perintah
     cudaEventRecord(stop);
+    
+    // Menahan CPU agar menunggu sampai tonggak 'stop' benar-benar disentuh oleh GPU
     cudaEventSynchronize(stop);
     
+    // Menghitung delta waktu secara akurat di level mili-detik
     float milliseconds = 0;
     cudaEventElapsedTime(&milliseconds, start, stop);
     
     printf("\nExecution Time: %.3f ms\n", milliseconds);
     print_detailed_routes(&global_best, h_nodes, capacity);
     
+    // Merilis instans Event marker
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
     
