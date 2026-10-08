@@ -19,6 +19,9 @@ int main(int argc, char** argv) {
     int num_nodes;
     int capacity;
     
+    // [Terkait Pertanyaan 1: Mengidentifikasi Pekerjaan Bersamaan]
+    // Pembacaan I/O ini HARUS dilakukan secara berurutan (sekuensial) oleh Host
+    // sebelum algoritma SA di GPU bisa diparalelkan.
     read_dataset(dataset, h_nodes, &num_nodes, &capacity);
     
     printf("Dataset: %s\n", dataset);
@@ -48,7 +51,9 @@ int main(int argc, char** argv) {
     // Menaruh tonggak 'stop' di aliran perintah
     cudaEventRecord(stop);
     
-    // Menahan CPU agar menunggu sampai tonggak 'stop' benar-benar disentuh oleh GPU
+    // [Terkait Pertanyaan 5: Sinkronisasi Urutan Pekerjaan]
+    // Menahan CPU (Host) agar menunggu sampai tonggak 'stop' benar-benar disentuh oleh GPU
+    // di dalam pipeline antrean Default Stream.
     cudaEventSynchronize(stop);
     
     // Menghitung delta waktu secara akurat di level mili-detik

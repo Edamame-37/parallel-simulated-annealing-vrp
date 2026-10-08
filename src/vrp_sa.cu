@@ -91,7 +91,8 @@ __global__ void run_simulated_annealing_kernel(
     curandState* state, 
     Solution* d_best_solutions) 
 {
-    // [1. Thread Indexing] Cari ID unik untuk thread ini.
+    // [Terkait Pertanyaan 2: Pemartisian Pekerjaan dan Indexing]
+    // Menghitung ID global thread dari struktur blockIdx dan threadIdx (Grid 1D).
     int id = threadIdx.x + blockIdx.x * blockDim.x;
     
     // [2. Parallel RNG] Muat state acak milik thread ini ke register lokal 
@@ -108,6 +109,9 @@ __global__ void run_simulated_annealing_kernel(
     
     double T = params.T0;
     
+    // [Terkait Pertanyaan 1: Identifikasi Pekerjaan (Dependensi Sekuensial)]
+    // Looping iterasi SA dan penurunan suhu ini WAJIB berjalan sekuensial (berurutan)
+    // karena suhu/iterasi berikutnya butuh hasil (state Markov Chain) sebelumnya.
     while (T > params.Tmin) {
         for (int i = 0; i < params.iterations; i++) {
             apply_neighborhood_move(&current_sol, &next_sol, &local_state);
@@ -132,7 +136,10 @@ __global__ void run_simulated_annealing_kernel(
     
     // Simpan kembali RNG state yang sudah dimodifikasi (opsional, jika dipanggil ulang)
     state[id] = local_state;
-    // Tulis rute terbaik yang ditemukan thread ini ke array output global
+    // [Terkait Pertanyaan 3: Distribusi Data & Pertanyaan 4: Koordinasi Akses Konflik]
+    // Data best_sol (local memory/register) disalin kembali ke VRAM (global memory).
+    // Menggunakan teknik "Akumulasi Privat" di mana thread HANYA menulis di indeks [id]-nya sendiri
+    // untuk mencegah race-condition (konflik) tanpa harus memakai atomic operations.
     copy_solution(&d_best_solutions[id], &best_sol);
 }
 
@@ -164,6 +171,8 @@ __host__ void run_cuda_parallel_sa(
        Mentransfer data secara fisik dari RAM komputer (h_nodes) ke VRAM VGA (d_nodes)
        melalui jalur motherboard (PCIe). Arah flag yang digunakan harus `cudaMemcpyHostToDevice`.
        --------------------------------------------------------------------- */
+    // [Terkait Pertanyaan 3: Distribusi Input H2D]
+    // d_nodes wajib ditransfer ke global memory (VRAM) karena dipakai serentak (read-only) oleh semua thread.
     cudaMemcpy(d_nodes, h_nodes, num_nodes * sizeof(Node), cudaMemcpyHostToDevice);
     
     curandState* d_state;
@@ -206,7 +215,9 @@ __host__ void run_cuda_parallel_sa(
        --------------------------------------------------------------------- */
     cudaMemcpy(h_all_solutions, d_best_solutions, total_threads * sizeof(Solution), cudaMemcpyDeviceToHost);
     
-    // CPU Global best reduction: Mencari rute terbaik absolut dari semua rute terbaik para thread
+    // [Terkait Pertanyaan 4: Menghindari Konflik Lewat Reduksi Bertahap]
+    // Daripada thread berebut (atomic conflict) di GPU, CPU (Host) melakukan "Reduction"
+    // mencari nilai minimum global secara aman dan sekuensial.
     h_best_solution->total_distance = 1e9; 
     for (int i = 0; i < total_threads; i++) {
         if (h_all_solutions[i].total_distance < h_best_solution->total_distance) {
