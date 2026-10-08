@@ -4,6 +4,8 @@
 **Bagian 1, Pertanyaan ke-1:** *"Bagian mana dari algoritma Anda yang dapat dijalankan secara bersamaan, dan bagian mana yang harus tetap berurutan? Gambarkan alur dari pembacaan input sampai keluaran akhir, lalu tunjukkan dependensi yang menjadi alasan setiap keputusan."*
 
 **Jawaban:**
+*(Diimplementasikan pada file: `src/main.cu` baris ke-22 dan `src/vrp_sa.cu` baris ke-112)*
+
 Pada program optimasi CVRP menggunakan Simulated Annealing (SA) versi CUDA, pekerjaan yang dapat dijalankan secara **bersamaan (paralel)** adalah **proses pencarian rute terbaik (eksplorasi SA) itu sendiri**. Setiap *thread* pada GPU menjalankan instans SA yang terpisah secara penuh, mulai dari inisialisasi rute acak, penelusuran *neighborhood*, hingga evaluasi solusi iteratif. Karena sifat heuristik pencarian acak, masing-masing proses ini saling independen dan tidak memiliki dependensi data antar-thread; setiap thread mencari di ruang solusi yang berbeda karena status pengacakannya (seed *cuRAND*) diatur unik.
 
 Namun, bagian yang harus tetap **berurutan (sekuensial)** meliputi:
@@ -18,6 +20,8 @@ Namun, bagian yang harus tetap **berurutan (sekuensial)** meliputi:
 **Bagian 2, Pertanyaan ke-1:** *"Bagaimana pekerjaan dibagi dan dipetakan pada versi MPI serta versi CUDA Anda? Tunjukkan hubungan antara indeks data global, rank MPI, indeks lokal, serta blockIdx dan threadIdx pada implementasi masing-masing."*
 
 **Jawaban (Fokus CUDA):**
+*(Diimplementasikan pada file: `src/vrp_sa.cu` baris ke-94)*
+
 Pekerjaan dipartisi menggunakan pola eksekusi *Task Parallelism* melalui pemanfaatan struktur *Grid* satu dimensi (1D) yang menaungi *Blocks* dan *Threads*. Karena ini adalah pencarian ruang heuristik yang dikerjakan masif-serentak (bukan pembagian array data secara tradisional), pemetaan didasarkan sepenuhnya dari *total thread* alokasi pencarian pengguna.
 
 Hubungan penentuan **ID/indeks global unik** dari setiap thread pekerja (penjelajah SA) diturunkan dari struktur hierarkis SM (Streaming Multiprocessor) CUDA dengan rumusan linier:
@@ -38,6 +42,8 @@ Dengan `id` global linier tersebut, thread mengetahui:
 **Bagian 3, Pertanyaan ke-4:** *"Pada implementasi CUDA, data mana yang perlu ditransfer dari host ke device, data mana yang dapat tetap berada di device, dan data mana yang perlu dikembalikan ke host? Jelaskan juga alasan penggunaan global memory, shared memory, atau constant memory apabila digunakan."*
 
 **Jawaban:**
+*(Diimplementasikan pada file: `src/vrp_sa.cu` baris ke-174 untuk transfer data H2D)*
+
 1. **Ditransfer dari Host ke Device (H2D):**
    - Array `Node` yang berisi letak koordinat pelanggan, titik berat *demand* muatan, dan depot. Ini karena pembacaan data awal (file .txt) hanya bisa dilakukan oleh modul CPU, sehingga disalin menggunakan `cudaMemcpy(..., cudaMemcpyHostToDevice)`.
 2. **Tetap berada di Device (Diciptakan dan musnah di Device):**
@@ -54,6 +60,8 @@ Dengan `id` global linier tersebut, thread mengetahui:
 **Bagian 4, Pertanyaan ke-4:** *"Apabila banyak pekerja berkontribusi terhadap satu hasil, seperti jumlah total, histogram, atau nilai maksimum, bagaimana konflik pembaruan dicegah? Bandingkan pilihan akumulasi privat, reduksi bertahap, atau operasi atomik berdasarkan kebenaran, ketelitian, dan overhead."*
 
 **Jawaban:**
+*(Diimplementasikan pada file: `src/vrp_sa.cu` baris ke-139 untuk akumulasi privat, dan baris ke-218 untuk reduksi CPU)*
+
 Pada solusi VRP ini, banyak pekerja menemukan solusinya masing-masing untuk dikontribusikan menuju satu temuan akhir: **Rute Minimum Global**. Jika seluruh thread berebut menimpa satu variabel tunggal *GlobalBest* setiap kali menemukan rute baru, akan timbul tabrakan baca/tulis *(race condition)* parah.
 
 Program kita menghindari konflik melalui teknik pendekatan **Akumulasi Privat (Private Output Array)** tanpa persilangan *write access*.
@@ -70,6 +78,8 @@ Perbandingan Teknik:
 **Bagian 5, Pertanyaan ke-5:** *"Bagaimana Anda menjamin urutan transfer host-to-device, eksekusi kernel, transfer device-to-host, dan penggunaan hasil oleh CPU? Tunjukkan dependensi yang digunakan pada satu stream maupun beberapa stream, termasuk peran event atau penantian host apabila diperlukan."*
 
 **Jawaban:**
+*(Diimplementasikan pada file: `src/main.cu` baris ke-54)*
+
 Aliran urutan eksekusi (*pipeline dependency*) sistem berbasis CUDA dijamin kebenarannya secara sekuensial dengan perpaduan asinkronisasi kernel, barikade sinkronisasi eksplisit GPU, serta blokade sinkron memori melalui satu aliran perintah utama (*Stream 0 / Default*).
 
 1. **Host-to-Device (H2D) $\rightarrow$ Kernel Execution:** 
