@@ -6,14 +6,14 @@
 ## 1. Analisis Alur Eksekusi Program dan Peran Perangkat Keras [Menit 0:00 - 2:00]
 
 **(Penjelasan Formal Terkait Alur Eksekusi Program pada Level Host dan Device):**
-Program optimasi CVRP menggunakan Simulated Annealing (SA) yang telah dikembangkan ini dirancang untuk memanfaatkan asimetri kemampuan komputasi antara CPU (Host) dan GPU (Device). Pada saat program dieksekusi, terdapat serangkaian peristiwa komputasional yang saling berkesinambungan:
+Program optimasi CVRP ini dirancang untuk memaksimalkan komputasi paralel GPU melalui tiga tahapan utama:
 
-1. **Inisialisasi Parametrik dan Transfer Memori (Host-to-Device):**
-   Eksekusi dimulai dengan modul CPU yang membaca file dataset dari media penyimpanan secara sekuensial. Pembacaan ini mencakup ekstraksi koordinat matriks pelanggan, batas kapasitas kendaraan, serta parameter heuristik SA (seperti Suhu Awal, Laju Pendinginan, dan Batas Iterasi). Data referensi spasial tersebut kemudian dipompakan seluruhnya menuju ruang memori global (*Global Memory*) pada VRAM GPU. Proses transfer data awal ini wajib diselesaikan secara absolut sebagai prasyarat ketersediaan peta pencarian sebelum paralelisasi diluncurkan.
-2. **Paralelisasi Komputasi Masif (Kernel Execution):**
-   Setelah prasyarat memori terpenuhi, CPU melepaskan instruksi kerja (*kernel launch*) kepada GPU dengan menyertakan dimensi topologi *Grid* (contoh: 64 blok dengan 256 *thread* per blok). Seketika, struktur perangkat keras GPU mengerahkan $16.384$ agen utas (*threads*) independen yang beroperasi serentak. Setiap utas bertindak sebagai agen pencari rute tunggal yang menjalankan siklus *Simulated Annealing* secara utuh di ruang solusi acaknya masing-masing, memutasi lintasan tanpa memerlukan penguncian sinkronisasi (*lock-free*) terhadap agen di sebelahnya.
-3. **Ekstraksi Hasil dan Presisi Profiling (Device-to-Host):**
-   Bila komputasi masif telah usai, agregasi rute-rute terbaik ditarik kembali menuju RAM komputer (*Device-to-Host*). Guna menjamin keandalan klaim performa komputasi, metrik waktu penyelesaian (*Execution Time*) tidak diukur melalui fungsi *timer* sistem operasi yang rentan *delay*. Pengukuran diambil murni pada level *hardware* cip grafis menggunakan fitur perlengkapan *CUDA Event Marker*, sehingga akurasi *profiling* dalam milidetik dapat dipertanggungjawabkan secara empiris.
+1. **Inisialisasi & Transfer (Host-to-Device):**
+   CPU membaca dataset (koordinat dan parameter heuristik) dari disk secara sekuensial. Data ini kemudian ditransfer sepenuhnya ke *Global Memory* VRAM GPU sebagai prasyarat ketersediaan peta pencarian sebelum komputasi dimulai.
+2. **Paralelisasi Komputasi (Kernel Execution):**
+   CPU meluncurkan *kernel* GPU (misalnya dengan 64 blok $\times$ 256 *thread*). Seketika, $16.384$ *thread* independen beroperasi serentak menjalankan iterasi *Simulated Annealing* di ruang pencariannya masing-masing secara *lock-free*.
+3. **Ekstraksi Hasil & Profiling (Device-to-Host):**
+   Kumpulan rute terbaik ditarik kembali ke RAM komputer untuk direduksi. Metrik *Execution Time* direkam secara presisi pada tingkat *hardware* menggunakan *CUDA Event Marker*, memastikan akurasi *profiling* terbebas dari latensi interupsi sistem operasi CPU.
 
 ---
 
