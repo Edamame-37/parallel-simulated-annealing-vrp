@@ -3,17 +3,17 @@
 
 ---
 
-## 1. Pendahuluan & Demo Eksekusi Program [Menit 0:00 - 2:00]
+## 1. Analisis Alur Eksekusi Program dan Peran Perangkat Keras [Menit 0:00 - 2:00]
 
-**(Apa yang perlu dijelaskan kepada audiens/penguji saat program dijalankan secara langsung):**
-1. **Cara Kompilasi & Parameter Eksekusi:**
-   Tunjukkan perintah untuk menjalankan program, misalnya `./vrp_sa data/dataset.txt 1000 0.99 0.001 100 64 256`. Jelaskan secara singkat bahwa kita melempar argumen *hyperparameter* SA (Suhu Awal, Laju Pendinginan, Suhu Minimum, Iterasi) serta *konfigurasi Grid GPU* (Jumlah Block dan Thread per Block).
-2. **Proses I/O & Transfer H2D (Host-to-Device):**
-   Saat program mulai menampilkan informasi *Dataset* dan *Capacity*, sampaikan bahwa modul CPU (Host) sedang membaca file teks mentah secara sekuensial, dan kemudian langsung memompakan data peta rute tersebut ke memori VRAM GPU.
-3. **Eksekusi Paralel (Jantung Komputasi):**
-   Saat layar tampak berhenti sejenak (proses menghitung), sampaikan bahwa di dalam cip GPU sedang terjadi ribuan proses penelusuran (Simulated Annealing) yang independen. Apabila kita menset parameter `64 blocks` $\times$ `256 threads`, artinya ada $16.384$ agen heuristik yang mengacak, menghitung, dan mencari rute di ruang solusi secara serentak tanpa saling menunggu.
-4. **Hasil Akhir & Waktu Eksekusi (Execution Time):**
-   Ketika hasil *Total Distance* dan metrik milidetik (*Execution Time*) dicetak, jelaskan bahwa angka waktu tersebut dicatat langsung oleh lapisan *hardware* GPU menggunakan fitur *CUDA Event Marker*, bukan *timer* CPU biasa yang rentan latensi *system call*. CPU baru mengambil data pemenangnya saja.
+**(Penjelasan Formal Terkait Alur Eksekusi Program pada Level Host dan Device):**
+Program optimasi CVRP menggunakan Simulated Annealing (SA) yang telah dikembangkan ini dirancang untuk memanfaatkan asimetri kemampuan komputasi antara CPU (Host) dan GPU (Device). Pada saat program dieksekusi, terdapat serangkaian peristiwa komputasional yang saling berkesinambungan:
+
+1. **Inisialisasi Parametrik dan Transfer Memori (Host-to-Device):**
+   Eksekusi dimulai dengan modul CPU yang membaca file dataset dari media penyimpanan secara sekuensial. Pembacaan ini mencakup ekstraksi koordinat matriks pelanggan, batas kapasitas kendaraan, serta parameter heuristik SA (seperti Suhu Awal, Laju Pendinginan, dan Batas Iterasi). Data referensi spasial tersebut kemudian dipompakan seluruhnya menuju ruang memori global (*Global Memory*) pada VRAM GPU. Proses transfer data awal ini wajib diselesaikan secara absolut sebagai prasyarat ketersediaan peta pencarian sebelum paralelisasi diluncurkan.
+2. **Paralelisasi Komputasi Masif (Kernel Execution):**
+   Setelah prasyarat memori terpenuhi, CPU melepaskan instruksi kerja (*kernel launch*) kepada GPU dengan menyertakan dimensi topologi *Grid* (contoh: 64 blok dengan 256 *thread* per blok). Seketika, struktur perangkat keras GPU mengerahkan $16.384$ agen utas (*threads*) independen yang beroperasi serentak. Setiap utas bertindak sebagai agen pencari rute tunggal yang menjalankan siklus *Simulated Annealing* secara utuh di ruang solusi acaknya masing-masing, memutasi lintasan tanpa memerlukan penguncian sinkronisasi (*lock-free*) terhadap agen di sebelahnya.
+3. **Ekstraksi Hasil dan Presisi Profiling (Device-to-Host):**
+   Bila komputasi masif telah usai, agregasi rute-rute terbaik ditarik kembali menuju RAM komputer (*Device-to-Host*). Guna menjamin keandalan klaim performa komputasi, metrik waktu penyelesaian (*Execution Time*) tidak diukur melalui fungsi *timer* sistem operasi yang rentan *delay*. Pengukuran diambil murni pada level *hardware* cip grafis menggunakan fitur perlengkapan *CUDA Event Marker*, sehingga akurasi *profiling* dalam milidetik dapat dipertanggungjawabkan secara empiris.
 
 ---
 
