@@ -59,27 +59,12 @@ __device__ void apply_neighborhood_move(Solution* current, Solution* next, curan
 }
 
 
-/* =========================================================================
-   [KONSEP CUDA: Kernel Function (__global__)]
-   __global__ menandakan bahwa fungsi ini dipanggil oleh CPU (Host) 
-   namun dieksekusi oleh GPU (Device) secara paralel oleh banyak thread.
-   ========================================================================= */
+
 __global__ void setup_curand_kernel(curandState* state, unsigned long long seed) {
-    /* ---------------------------------------------------------------------
-       [1. KONSEP CUDA: Thread Indexing]
-       Karena jutaan instruksi dieksekusi bersamaan, setiap thread perlu 
-       tahu "siapa dirinya" agar memproses data yang spesifik untuknya.
-       Rumusnya: threadIdx.x + (blockIdx.x * blockDim.x)
-       Hasil `id` ini menjamin bahwa setiap thread dalam Grid memiliki nomor seri unik dari 0 hingga Total_Thread-1.
-       --------------------------------------------------------------------- */
+
     int id = threadIdx.x + blockIdx.x * blockDim.x;
     
-    /* ---------------------------------------------------------------------
-       [2. KONSEP CUDA: Parallel Random Number Generation]
-       Kita tidak bisa menggunakan rand() standar C di GPU.
-       curand_init akan memberikan status/seed random yang berbeda (didasarkan 
-       pada `id` thread) sehingga setiap thread punya urutan pengacakan sendiri.
-       --------------------------------------------------------------------- */
+
     curand_init(seed, id, 0, &state[id]);
 }
 
@@ -91,11 +76,11 @@ __global__ void run_simulated_annealing_kernel(
     curandState* state, 
     Solution* d_best_solutions) 
 {
-    // [Terkait Pertanyaan 2: Pemartisian Pekerjaan dan Indexing]
+    // 2. Pemartisian Pekerjaan dan Indexing
     // Menghitung ID global thread dari struktur blockIdx dan threadIdx (Grid 1D).
     int id = threadIdx.x + blockIdx.x * blockDim.x;
     
-    // [2. Parallel RNG] Muat state acak milik thread ini ke register lokal 
+    // Muat state acak milik thread ini ke register lokal
     // agar operasi random (curand_uniform) sangat cepat dieksekusi tanpa mengakses RAM global.
     curandState local_state = state[id];
     
@@ -109,7 +94,7 @@ __global__ void run_simulated_annealing_kernel(
     
     double T = params.T0;
     
-    // [Terkait Pertanyaan 1: Identifikasi Pekerjaan (Dependensi Sekuensial)]
+    // 1. Identifikasi Pekerjaan (Dependensi Sekuensial)
     // Looping iterasi SA dan penurunan suhu ini WAJIB berjalan sekuensial (berurutan)
     // karena suhu/iterasi berikutnya butuh hasil (state Markov Chain) sebelumnya.
     while (T > params.Tmin) {
@@ -136,7 +121,7 @@ __global__ void run_simulated_annealing_kernel(
     
     // Simpan kembali RNG state yang sudah dimodifikasi (opsional, jika dipanggil ulang)
     state[id] = local_state;
-    // [Terkait Pertanyaan 3: Distribusi Data & Pertanyaan 4: Koordinasi Akses Konflik]
+    // 3. Distribusi Data & 4. Koordinasi Akses Konflik
     // Data best_sol (local memory/register) disalin kembali ke VRAM (global memory).
     // Menggunakan teknik "Akumulasi Privat" di mana thread HANYA menulis di indeks [id]-nya sendiri
     // untuk mencegah race-condition (konflik) tanpa harus memakai atomic operations.
@@ -144,11 +129,7 @@ __global__ void run_simulated_annealing_kernel(
 }
 
 
-/* =========================================================================
-   [KONSEP CUDA: Host Wrapper (__host__)]
-   Fungsi ini berjalan murni di CPU. Tugasnya menyiapkan memori, mentransfer 
-   data ke GPU, memerintahkan GPU untuk bekerja, dan menarik data kembali ke CPU.
-   ========================================================================= */
+
 __host__ void run_cuda_parallel_sa(
     const Node* h_nodes, 
     int num_nodes, 
@@ -159,19 +140,11 @@ __host__ void run_cuda_parallel_sa(
     int total_threads = params.num_blocks * params.threads_per_block;
     
     Node* d_nodes;
-    /* ---------------------------------------------------------------------
-       [3. KONSEP CUDA: Allocating (cudaMalloc)]
-       Memesan memori langsung pada VRAM GPU (disebut juga Device Memory).
-       Perhatikan penggunaaan `d_` (device) untuk menamai variabel, dan pointer ke void.
-       --------------------------------------------------------------------- */
+
     cudaMalloc((void**)&d_nodes, num_nodes * sizeof(Node));
     
-    /* ---------------------------------------------------------------------
-       [4. KONSEP CUDA: Copying (cudaMemcpyHostToDevice)]
-       Mentransfer data secara fisik dari RAM komputer (h_nodes) ke VRAM VGA (d_nodes)
-       melalui jalur motherboard (PCIe). Arah flag yang digunakan harus `cudaMemcpyHostToDevice`.
-       --------------------------------------------------------------------- */
-    // [Terkait Pertanyaan 3: Distribusi Input H2D]
+
+    // 3. Distribusi Input H2D
     // d_nodes wajib ditransfer ke global memory (VRAM) karena dipakai serentak (read-only) oleh semua thread.
     cudaMemcpy(d_nodes, h_nodes, num_nodes * sizeof(Node), cudaMemcpyHostToDevice);
     
@@ -181,22 +154,10 @@ __host__ void run_cuda_parallel_sa(
     Solution* d_best_solutions;
     cudaMalloc((void**)&d_best_solutions, total_threads * sizeof(Solution));
     
-    /* ---------------------------------------------------------------------
-       [5. KONSEP CUDA: Kernel Launching]
-       Sintaks `<<<blocks, threads>>>` adalah notasi ajaib khusus compiler NVCC.
-       Ini memerintahkan GPU untuk menjalankan fungsi tersebut dengan topologi/organisasi 
-       tertentu. Contoh: jika blocks=64 dan threads=256, maka GPU akan memutar 
-       sebanyak 16.384 fungsi tersebut secara paralel!
-       --------------------------------------------------------------------- */
+
     setup_curand_kernel<<<params.num_blocks, params.threads_per_block>>>(d_state, 1234ULL);
     
-    /* ---------------------------------------------------------------------
-       [6. KONSEP CUDA: Thread Synchronizing (cudaDeviceSynchronize)]
-       Panggilan Kernel di atas bersifat *Asynchronous*, artinya CPU akan 
-       langsung berlanjut ke baris kode di bawahnya tanpa menunggu GPU selesai.
-       `cudaDeviceSynchronize()` menahan ("block") kerja CPU hingga semua antrian 
-       komputasi GPU saat itu benar-benar tuntas.
-       --------------------------------------------------------------------- */
+
     cudaDeviceSynchronize();
     
     // Menjalankan algoritma utama Simulated Annealing
@@ -207,15 +168,10 @@ __host__ void run_cuda_parallel_sa(
     
     Solution* h_all_solutions = (Solution*)malloc(total_threads * sizeof(Solution));
     
-    /* ---------------------------------------------------------------------
-       [4b. KONSEP CUDA: Copying Balik (cudaMemcpyDeviceToHost)]
-       Setelah miliaran operasi pencarian rute pada SA selesai di GPU,
-       kita harus menarik kembali datanya dari VRAM GPU (`d_best_solutions`)
-       menuju RAM CPU (`h_all_solutions`). Flag-nya adalah `cudaMemcpyDeviceToHost`.
-       --------------------------------------------------------------------- */
+
     cudaMemcpy(h_all_solutions, d_best_solutions, total_threads * sizeof(Solution), cudaMemcpyDeviceToHost);
     
-    // [Terkait Pertanyaan 4: Menghindari Konflik Lewat Reduksi Bertahap]
+    // 4. Menghindari Konflik Lewat Reduksi Bertahap
     // Daripada thread berebut (atomic conflict) di GPU, CPU (Host) melakukan "Reduction"
     // mencari nilai minimum global secara aman dan sekuensial.
     h_best_solution->total_distance = 1e9; 
@@ -227,11 +183,7 @@ __host__ void run_cuda_parallel_sa(
     
     free(h_all_solutions);
     
-    /* ---------------------------------------------------------------------
-       [7. KONSEP CUDA: Freeing GPU Memory (cudaFree)]
-       GPU tidak memiliki 'Garbage Collector'. Memori yang dipesan via `cudaMalloc` 
-       akan terus membebani VRAM sampai aplikasi ditutup paksa jika tidak dilepaskan.
-       --------------------------------------------------------------------- */
+
     cudaFree(d_nodes);
     cudaFree(d_state);
     cudaFree(d_best_solutions);

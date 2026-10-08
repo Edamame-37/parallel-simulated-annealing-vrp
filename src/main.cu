@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     int num_nodes;
     int capacity;
     
-    // [Terkait Pertanyaan 1: Mengidentifikasi Pekerjaan Bersamaan]
+    // 1. Mengidentifikasi Pekerjaan Bersamaan
     // Pembacaan I/O ini HARUS dilakukan secara berurutan (sekuensial) oleh Host
     // sebelum algoritma SA di GPU bisa diparalelkan.
     read_dataset(dataset, h_nodes, &num_nodes, &capacity);
@@ -29,12 +29,7 @@ int main(int argc, char** argv) {
     
     Solution global_best;
     
-    /* ---------------------------------------------------------------------
-       [8. KONSEP CUDA: Event Synchronizing & Measuring Time]
-       Kita tidak bisa menggunakan fungsi ukur waktu CPU standar seperti `time()`
-       atau `clock()` karena perintah eksekusi kernel ke GPU dikirim asinkron (langsung lolos).
-       Oleh karena itu, CUDA menggunakan sistem "Event Marker".
-       --------------------------------------------------------------------- */
+
     cudaEvent_t start, stop;
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
@@ -51,7 +46,7 @@ int main(int argc, char** argv) {
     // Menaruh tonggak 'stop' di aliran perintah
     cudaEventRecord(stop);
     
-    // [Terkait Pertanyaan 5: Sinkronisasi Urutan Pekerjaan]
+    // 5. Sinkronisasi Urutan Pekerjaan
     // Menahan CPU (Host) agar menunggu sampai tonggak 'stop' benar-benar disentuh oleh GPU
     // di dalam pipeline antrean Default Stream.
     cudaEventSynchronize(stop);
